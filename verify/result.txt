@@ -1,0 +1,5 @@
+seeds compared:                 2000
+z vectors not identical:        0
+max |x_engine - x_standalone|:  8.882e-16
+clones compared (3 obs each):   1788 (both rejected as out-of-bounds: 212, disagreements: 0)
+max |z*_engine - z*_standalone|: 0.000e+0
