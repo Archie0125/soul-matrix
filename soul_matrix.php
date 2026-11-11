@@ -9,7 +9,8 @@
  *          Gaussian posterior (Matheron's rule) so the unobserved axes move with R.
  *
  * Same seed → same person on every machine: all randomness comes from sha256, never mt_rand.
- * This file reproduces the private engine's z, x and conditioning bit-for-bit (see verify/).
+ * Checked against the private engine (verify/): z and conditioning identical, x within 1e-15 given the
+ * engine's shift magnitudes. Archetype signs and shift magnitudes use this file's own salts.
  */
 
 declare(strict_types=1);

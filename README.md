@@ -2,7 +2,7 @@
 
 **Persona management as linear algebra.** Every persona is a point in a correlated vector space. A seed gives you a new virtual persona; a few observations of a real person (given with consent) condition the vector toward them. The vector then steers how a language model writes, so a persona keeps the same voice across thousands of posts.
 
-> **Prior work, stated up front.** I built the engine behind this repo between **Nov 6 and Nov 10, 2026**, inside a private Traditional Chinese forum codebase. That was **before** c0mpiled-18 Taipei. During the event (Nov 11) I only extracted its core into `soul_matrix.php`, checked it bit-for-bit against the original, and wrote this README and the demo video. Under the event rules this is prior work, and the judges should treat it that way.
+> **Prior work, stated up front.** I built the engine behind this repo between **Nov 6 and Nov 11, 2026**, inside a private Traditional Chinese forum codebase. The core math in this repo dates from Nov 7 to Nov 10. Other parts of that codebase, such as the typing-habit layer, were still being worked on on Nov 11, including during the event. For this repo, the only work done during c0mpiled-18 Taipei was extracting the core into `soul_matrix.php`, checking it against the original, and writing this README and the demo video. Some results below were measured on Nov 11. Under the event rules this is prior work, and the judges should treat it that way.
 
 Context: YC's Request for Startups *LLMs That Write Well* (Jared Friedman) argues that the reward signals behind strong coding models flatten voice and style. Soul Matrix does not train a model. It sits on top of one and supplies the voice, as an explicit vector you can inspect, edit, clone and blend.
 
@@ -16,6 +16,10 @@ php soul_matrix.php forge 42 +-+-         # same seed, archetype signs set by ha
 php soul_matrix.php clone 42 humor=1.8 swear=1.5 emoji=-1.2   # condition seed 42 on three observed axes
 php soul_matrix.php blend 42 7 0.5        # halfway between two personas
 ```
+
+## Demo
+
+`soul-matrix-demo.mp4` (89 seconds, 1080p) is rendered frame by frame from `slides.html`. You can also open `slides.html` in a browser, where it plays on its own. Keys: `Space` play/pause, `←` `→` step, `R` restart, `C` captions. The charts use `slides-data.js`, which `soul_matrix.php` generated.
 
 ## The math
 
@@ -48,7 +52,7 @@ Each axis is a standardized latent value. The full engine turns it into a concre
 | 5 | `N` | Neuroticism | emotional volatility | C −.25, A −.20, punct_heavy +.25 |
 | 6 | `humor` | Humor | jokes, irony, light teasing | slang +.30 |
 | 7 | `slang` | Internet slang density | share of slang words | humor +.30, emoji +.30, particle +.35 |
-| 8 | `emoji` | Emoji use | emoji rate = 0.30 · e^(0.5x), clamped to [0, 0.6] | E +.25, slang +.30 |
+| 8 | `emoji` | Emoji use | emoji rate = 0.30 · e^(0.5x), clamped to [0, 0.6]; 0 for personas whose emoji mode is "none" | E +.25, slang +.30 |
 | 9 | `punct_heavy` | Punctuation intensity | 4 levels: none / sparse / normal / heavy (15/35/35/15%) | C −.10, N +.25 |
 | 10 | `length` | Verbosity | median comment length | O +.20 |
 | 11 | `english` | Code-switching | how often English words are mixed into Chinese | O +.15 |
@@ -68,13 +72,13 @@ These exist in the private engine and are documented here so the design is compl
 | Layer | Size | What it is |
 |---|---|---|
 | Typing-habit block | 9 axes | zhuyin (phonetic-symbol) typing, kaomoji, ellipsis style, intensifier budget, line breaks, typesetting (half-width punctuation, spacing), laughter forms, tilde, question-mark habits. Built as `u = σ·γ(age) + B·x + L_h·ε`, where `B = C·R⁻¹` ties habits to the core axes and γ(age) shifts how common each habit is by age group. |
-| Identity chain | 14 fields | birth year, age, gender, home city, current city, life stage, job group, job, marital status, kids, home platform, era vocabulary, education, military service. Drawn as a conditional chain (each field depends only on earlier ones) and checked against Taiwanese census tables. |
-| Life layer | ~20 fields | cohort and tech era, family structure, relatives, influences, memories, inner voice, convictions, hobbies, expertise, the 10 Schwartz values, the 3 self-determination needs, and debate style (reason / feelings / rules / group / own experience). |
+| Identity chain | 14 fields | birth year, age, gender, home city, current city, life stage, job group, job, marital status, kids, home platform, era vocabulary, education, military service. Drawn as a conditional chain: each field depends only on earlier ones, using the engine's distribution tables. |
+| Life layer | 17 fields | cohort and tech era, family structure, relatives, influences, memories, inner voice, convictions, hobbies, expertise, the 10 Schwartz values, the 3 self-determination needs, and debate style (reason / feelings / rules / group / own experience). |
 | Writing pass | — | A persona card of at most 250 characters, plus the persona's own few-shot samples, goes to the model. A deterministic typing pass then enforces the vector's rates (emoji, particles, punctuation, typos), and quality gates reject generic "AI tone". |
 
 ## Verified tonight
 
-`verify/compare_with_engine.php` runs this file against the private engine. Result (`verify/result.txt`):
+`verify/compare_with_engine.php` runs this file against the private engine. The z vectors and clone results are identical. x matches to within 1e-15 when given the engine's shift magnitudes. This file uses its own hash salts for the archetype signs and shift magnitudes, so `forge 42` here differs from the engine's persona 42 on E, O, A and C. Result (`verify/result.txt`):
 
 ```
 seeds compared:                 2000
@@ -90,26 +94,26 @@ The full engine generated these comments on **Nov 8, 2026**, before the event. I
 
 **Thread:** *"Company suddenly says everyone must come back to the office every Friday."* The comment being replied to: *"The worst part is the commute. Three hours round trip, who pays me back for that?"*
 
-| Persona (vector highlights) | Comment | English |
+| Persona (selected parameters: axis values and surface rates) | Comment | English |
 |---|---|---|
-| Reserved (E −0.40), heavy English mixing (0.59) | 超痛苦 通勤浪費生命 | Pure suffering. Commuting is a waste of life. |
-| Very agreeable (A +2.34), heavy slang (0.82) | 超痛欸，單程一個半小時會累死，有誰有什麼躲避通勤的撇步嗎？ | Ugh, that hurts. An hour and a half each way would kill me. Anyone have tricks for dodging the commute? |
-| Outgoing (E +0.65), exclaims a lot (0.34), no emoji | 蛤，這超痛苦 我住新北通勤起來也超累的 主要還是因為那些理由都瞎 什麼凝聚力什麼的。。。只是想叫大家回辦公室而已吧，那種通勤浪費的時間沒人補啦 我會想直接退休 | Huh? That's brutal. I live in New Taipei and my commute wears me out too. Mostly it's that the reasons are nonsense, "team cohesion" or whatever... they just want everyone back in the office, right? Nobody pays you back for commuting time. I'd just want to retire. |
-| Slightly reserved, mildly disagreeable (A −0.27) | 真的超痛欸，那邊通勤單程又要一個多小時，回來的路上整個人都空了，沒辦法好好追劇，真的超不划算 | Seriously painful. Over an hour each way, and on the ride home you're totally drained, can't even binge your shows. Not worth it at all. |
+| E −0.40 · slang rate .56 · English-mix rate .59 | 超痛苦 通勤浪費生命 | Pure suffering. Commuting is a waste of life. |
+| A +2.34 · slang rate .82 | 超痛欸，單程一個半小時會累死，有誰有什麼躲避通勤的撇步嗎？ | Ugh, that hurts. An hour and a half each way would kill me. Anyone have tricks for dodging the commute? |
+| E +0.65 · exclamation rate .34 · emoji rate 0 | 蛤，這超痛苦 我住新北通勤起來也超累的 主要還是因為那些理由都瞎 什麼凝聚力什麼的。。。只是想叫大家回辦公室而已吧，那種通勤浪費的時間沒人補啦 我會想直接退休 | Huh? That's brutal. I live in New Taipei and my commute wears me out too. Mostly it's that the reasons are nonsense, "team cohesion" or whatever... they just want everyone back in the office, right? Nobody pays you back for commuting time. I'd just want to retire. |
+| E −0.10 · A −0.27 · median length 25 characters | 真的超痛欸，那邊通勤單程又要一個多小時，回來的路上整個人都空了，沒辦法好好追劇，真的超不划算 | Seriously painful. Over an hour each way, and on the ride home you're totally drained, can't even binge your shows. Not worth it at all. |
 
-Same model, same thread, same prompt template. Only the vector differs.
+Same model, same thread, same prompt template. Only the persona differs: its vector, identity, life layer and its own few-shot samples.
 
-## What has been measured (full engine, before the event)
+## What has been measured (full engine, Nov 8–11)
 
-- **Personas are distinguishable from each other.** 48 personas × 32 topics, 1,533 comments. Character 1–3-gram TF-IDF with topic-controlled split halves gave a within-group AUC of **0.910** (95% CI 0.864–0.958). The shuffled-label control was 0.50, and no persona passed by repeating a catchphrase (n-gram leak check passed).
-- **Known machine tics were reduced** after regenerating with the typing pass. For example, the filler 真的 ("really") went from 1.55 to 0.38 per comment, and sentence-final particles at the end of a comment went from 48% to 22%.
+- **Personas are distinguishable from each other.** The test used 48 personas × 32 topics, 1,533 comments, character 1–3-gram TF-IDF and topic-controlled split halves. Comparing bundles of 16 comments, the within-group AUC was **0.910** (95% CI 0.864–0.958). For single comments it was 0.646 (95% CI 0.617–0.675). The shuffled-label control was 0.50, and no persona passed by repeating a catchphrase (n-gram leak check passed).
+- **A known machine tic was reduced** after regenerating with the typing pass. On 64 regenerated comments (8 personas × 8 topics), the filler 真的 ("really") went from 1.55 to 0.38 per comment.
 
 ## What it does not do yet
 
-- **No human blind test of "sounds like a real person."** The only blind test so far compared topic ideas, not voices. It got 25/40 against a preregistered pass bar of 27, so it failed.
+- **No human blind test of "sounds like a real person."** The only blind test so far (Nov 11) compared topic ideas, not voices. It got 25/40 (one-sided p = .077) against a preregistered pass bar of 27, so it failed.
 - **Cloning has not been validated on real people.** The math is exact, but nobody has checked whether a clone writes like the person it was conditioned on.
 - **English is untested.** The 17 core axes are language-agnostic. The habit layer and writing pass are Chinese-specific. Whether the vector carries over to English is a hypothesis, not a result.
-- **Habits do not reveal personality.** Predicting the 4-letter archetype from typing habits scored 7%, worse than always guessing the most common class (12%).
+- **Habits do not reveal personality.** On 1,000 personas, a 5-fold logistic model predicting the 16-way archetype from typing habits scored 7.1%, worse than always guessing the most common class (12.2%).
 
 ## Responsible use
 

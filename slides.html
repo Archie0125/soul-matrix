@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soul Matrix</title>
+<style>
+  :root { --bg:#0f1115; --panel:#181b22; --ink:#eef0f4; --mute:#8b93a3; --line:#2a2f3a; --a:#7cc4ff; --b:#ffb86b; --ok:#7ee0a1; --warn:#ff8f8f; }
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; font-family:"Segoe UI", Inter, Helvetica, Arial, "Microsoft JhengHei", sans-serif; color:var(--ink); }
+  #stage { position:absolute; width:1600px; height:900px; left:50%; top:50%; transform-origin:center; background:var(--bg); overflow:hidden; }
+  .slide { position:absolute; inset:0; padding:70px 90px 170px; opacity:0; }
+  h1 { font-size:88px; margin:150px 0 20px; letter-spacing:-1px; }
+  h2 { font-size:46px; margin:0 0 30px; font-weight:650; }
+  .sub { font-size:34px; color:var(--mute); line-height:1.4; }
+  .tag { display:inline-block; font-size:20px; letter-spacing:3px; color:var(--b); text-transform:uppercase; margin-bottom:18px; }
+  .box { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:28px 34px; }
+  .mono { font-family:Consolas, "SF Mono", monospace; }
+  #cap { position:absolute; left:90px; right:90px; bottom:40px; min-height:96px; font-size:30px; line-height:1.4; text-align:center; color:#fff; }
+  #cap span { background:rgba(0,0,0,.72); padding:6px 14px; border-radius:8px; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+  .bars { display:grid; grid-template-columns: 170px 1fr; row-gap:6px; column-gap:16px; font-size:20px; align-items:center; }
+  .bar { position:relative; height:20px; }
+  .bar .mid { position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--line); }
+  .bar i { position:absolute; top:0; height:100%; border-radius:4px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+  .k { color:var(--mute); }
+  .cmt { display:grid; grid-template-columns: 330px 1fr; gap:22px; padding:14px 0; border-top:1px solid var(--line); }
+  .cmt .zh { font-size:24px; line-height:1.45; }
+  .cmt .en { font-size:21px; color:var(--mute); line-height:1.4; margin-top:6px; }
+  .who { font-size:19px; color:var(--a); line-height:1.4; }
+  .stat { font-size:64px; font-weight:700; }
+  .row3 { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; }
+  #hint { position:fixed; right:12px; bottom:8px; color:#555; font-size:12px; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <section class="slide" data-start="0" data-end="8" data-cap="LLMs got better at code and worse at voice. Soul Matrix gives every persona an explicit voice vector that a model writes from.">
+    <div class="tag">Persona management</div>
+    <h1>Soul Matrix</h1>
+    <div class="sub">Every persona is a point in a correlated vector space.<br>Create one from a seed. Clone one from observations. Blend two.</div>
+  </section>
+
+  <section class="slide" data-start="8" data-end="16" data-cap="Prior work, stated up front: I built this engine in a private codebase from November 6 to 11. Its core math dates from November 7 to 10. During the event I only extracted it, verified it, and documented it.">
+    <div class="tag">Prior work</div>
+    <h2>What existed before tonight, and what I did tonight</h2>
+    <div class="two">
+      <div class="box"><div class="k">Nov 6 – 11 (core math: Nov 7 – 10)</div><div class="sub" style="color:var(--ink);margin-top:12px">The persona engine, inside a private Traditional Chinese forum codebase.</div></div>
+      <div class="box"><div class="k">Nov 11 (during the event)</div><div class="sub" style="color:var(--ink);margin-top:12px">Extracted the core into one file, checked it against the engine, wrote the docs and this video.</div></div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-forge" data-start="16" data-end="31" data-cap="A seed hashes into 17 independent numbers. The Cholesky factor of a correlation matrix turns them into one internally consistent persona.">
+    <div class="tag">seed 42 → z → x = L·z</div>
+    <div class="two">
+      <div><h2 style="font-size:30px">z: independent, from sha256</h2><div class="bars" id="bars-z"></div></div>
+      <div><h2 style="font-size:30px">x: correlated persona</h2><div class="bars" id="bars-x"></div></div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-dims" data-start="31" data-end="44" data-cap="Seventeen axes: five personality traits plus humor, slang, emoji, punctuation, length, code-switching, typos, particles, activity, pushback, exclamation and swearing. Eighteen correlations tie them together.">
+    <div class="tag">Every dimension</div>
+    <div style="display:grid;grid-template-columns:620px 1fr;gap:40px;align-items:start">
+      <svg id="heat" width="620" height="620"></svg>
+      <div id="dimlist" style="font-size:22px;line-height:1.55"></div>
+    </div>
+  </section>
+
+  <section class="slide" id="s-clone" data-start="44" data-end="58" data-cap="Clone: observe a few axes of a real person, with their consent, and condition the vector. Unobserved axes move through the correlations.">
+    <div class="tag">Clone = exact Gaussian conditioning</div>
+    <div class="two">
+      <div><h2 style="font-size:30px">Before <span class="k">(seed 42)</span></h2><div class="bars" id="bars-before"></div></div>
+      <div><h2 style="font-size:30px">After <span class="k">(observed: humor ↑, swear ↑, emoji ↓)</span></h2><div class="bars" id="bars-after"></div></div>
+    </div>
+  </section>
+
+  <section class="slide" data-start="58" data-end="75" data-cap="What they write: same model, same thread, same prompt template. Only the persona differs. These came from the full engine on November 8; the English is my translation.">
+    <div class="tag">What they write</div>
+    <div class="k" style="font-size:22px;margin-bottom:8px">Thread: "Company says everyone must come back to the office every Friday." Replying to: "The commute is the worst part. Three hours round trip."</div>
+    <div class="cmt"><div class="who">E −0.40 · slang .56 · English-mix .59</div><div><div class="zh">超痛苦 通勤浪費生命</div><div class="en">Pure suffering. Commuting is a waste of life.</div></div></div>
+    <div class="cmt"><div class="who">A +2.34 · slang .82</div><div><div class="zh">超痛欸，單程一個半小時會累死，有誰有什麼躲避通勤的撇步嗎？</div><div class="en">Ugh, that hurts. An hour and a half each way would kill me. Anyone have tricks for dodging the commute?</div></div></div>
+    <div class="cmt"><div class="who">E +0.65 · exclaim .34 · emoji 0</div><div><div class="zh">蛤，這超痛苦 我住新北通勤起來也超累的 主要還是因為那些理由都瞎 什麼凝聚力什麼的。。。只是想叫大家回辦公室而已吧 …</div><div class="en">Huh? That's brutal. My commute from New Taipei wears me out too. The reasons are nonsense, "team cohesion" or whatever... they just want everyone back in the office. (excerpt)</div></div></div>
+  </section>
+
+  <section class="slide" data-start="75" data-end="84" data-cap="Measured: personas can be told apart, strongly over 16 comments and weakly from one, and the extraction matches the engine. Not yet tested: human blind reads, cloning real people, and English.">
+    <div class="tag">Evidence and limits</div>
+    <div class="row3">
+      <div class="box"><div class="stat" style="color:var(--ok)">0.910</div><div class="sub">AUC telling 48 personas apart<br>(16-comment bundles; single comment 0.646; shuffled 0.50)</div></div>
+      <div class="box"><div class="stat" style="color:var(--ok)">0 / 2,000</div><div class="sub">z vectors that differ from the engine</div></div>
+      <div class="box"><div class="stat" style="color:var(--warn)">Not yet</div><div class="sub">human blind test · clone validation · English</div></div>
+    </div>
+  </section>
+
+  <section class="slide" data-start="84" data-end="89" data-cap="Soul Matrix. One PHP file, no dependencies. github.com/Archie0125/soul-matrix">
+    <h1 style="margin-top:220px">Soul Matrix</h1>
+    <div class="sub mono" style="color:var(--a)">github.com/Archie0125/soul-matrix</div>
+  </section>
+
+  <div id="cap"></div>
+</div>
+<div id="hint">Space: play / pause · ← →: step · R: restart · C: captions</div>
+<script src="slides-data.js"></script>
+<script>
+const TOTAL = 89;
+const stage = document.getElementById('stage');
+const slides = [...document.querySelectorAll('.slide')];
+const cap = document.getElementById('cap');
+const SM = window.SM;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function bars(el, values, color, highlight = []) {
+  el.innerHTML = SM.axes.map(a => `<div class="${highlight.includes(a) ? '' : 'k'}">${a}</div><div class="bar" data-v="${values[a]}" data-c="${highlight.includes(a) ? 'var(--b)' : color}"><div class="mid"></div><i></i></div>`).join('');
+}
+function growBars(el, p) {
+  el.querySelectorAll('.bar').forEach((b, i) => {
+    const local = clamp(p * 1.6 - i * 0.03, 0, 1);
+    const v = clamp(parseFloat(b.dataset.v) / 3, -1, 1) * local;
+    const bar = b.querySelector('i');
+    bar.style.background = b.dataset.c;
+    bar.style.left = v >= 0 ? '50%' : (50 + v * 50) + '%';
+    bar.style.width = Math.abs(v * 50) + '%';
+  });
+}
+bars(document.getElementById('bars-z'), SM.z, 'var(--mute)');
+bars(document.getElementById('bars-x'), SM.x, 'var(--a)');
+bars(document.getElementById('bars-before'), SM.x, 'var(--a)');
+bars(document.getElementById('bars-after'), SM.xc, 'var(--a)', SM.obs);
+
+(function heat() {
+  const n = SM.axes.length, cell = 29, off = 120, svg = document.getElementById('heat');
+  let h = '';
+  for (let i = 0; i < n; i++) {
+    h += `<text x="${off - 6}" y="${8 + i * cell + 20}" fill="#8b93a3" font-size="13" text-anchor="end">${SM.axes[i]}</text>`;
+    for (let j = 0; j < n; j++) {
+      const r = SM.R[i][j];
+      const col = i === j ? '#2a2f3a' : r > 0 ? `rgba(124,196,255,${Math.abs(r) * 2})` : r < 0 ? `rgba(255,143,143,${Math.abs(r) * 2})` : '#14171d';
+      h += `<rect class="hc" data-k="${i + j}" x="${off + j * cell}" y="${8 + i * cell}" width="${cell - 2}" height="${cell - 2}" rx="3" fill="${col}"/>`;
+    }
+  }
+  svg.innerHTML = h;
+  const groups = [['E O A C N', 'personality (Big Five)'], ['humor', 'jokes, irony'], ['slang emoji particle', 'register'], ['punct_heavy exclaim', 'punctuation'], ['length english typo', 'shape of the text'], ['activity disagree swear', 'behaviour']];
+  document.getElementById('dimlist').innerHTML = groups.map(([a, b]) => `<div><span class="mono" style="color:var(--a)">${a}</span> <span class="k">· ${b}</span></div>`).join('')
+    + `<div style="margin-top:22px" class="k">blue = positive, red = negative.<br>e.g. agreeableness ↔ pushback −0.40,<br>conscientiousness ↔ typos −0.35</div>`;
+})();
+
+function render(t) {
+  let active = null;
+  slides.forEach(s => {
+    const a = +s.dataset.start, b = +s.dataset.end;
+    const o = clamp(Math.min((t - a) / 0.5, (b - t) / 0.5), 0, 1);
+    s.style.opacity = (t >= a && t < b) ? o : 0;
+    if (t >= a && t < b) active = s;
+  });
+  if (active) {
+    const p = (t - +active.dataset.start) / (+active.dataset.end - +active.dataset.start);
+    cap.innerHTML = capOn ? `<span>${esc(active.dataset.cap)}</span>` : '';
+    if (active.id === 's-forge') { growBars(document.getElementById('bars-z'), p * 2); growBars(document.getElementById('bars-x'), clamp(p * 2 - 0.7, 0, 1)); }
+    if (active.id === 's-clone') { growBars(document.getElementById('bars-before'), p * 3); growBars(document.getElementById('bars-after'), clamp(p * 2.2 - 0.5, 0, 1)); }
+    if (active.id === 's-dims') document.querySelectorAll('.hc').forEach(r => r.style.opacity = clamp(p * 5 - (+r.dataset.k) * 0.08, 0, 1));
+  }
+}
+
+let capOn = true, playing = true, t = 0, last = null;
+window.__seek = s => { t = s; render(t); };
+function fit() { const s = Math.min(innerWidth / 1600, innerHeight / 900); stage.style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener('resize', fit); fit();
+const rendering = new URLSearchParams(location.search).has('render');
+if (rendering) { document.getElementById('hint').remove(); render(0); }
+else {
+  requestAnimationFrame(function loop(now) {
+    if (last !== null && playing) t = Math.min(TOTAL, t + (now - last) / 1000);
+    last = now; render(t); requestAnimationFrame(loop);
+  });
+  addEventListener('keydown', e => {
+    const starts = slides.map(s => +s.dataset.start);
+    if (e.code === 'Space') playing = !playing;
+    if (e.key === 'r' || e.key === 'R') t = 0;
+    if (e.key === 'c' || e.key === 'C') capOn = !capOn;
+    if (e.key === 'ArrowRight') t = starts.find(s => s > t + 0.01) ?? t;
+    if (e.key === 'ArrowLeft') t = [...starts].reverse().find(s => s < t - 0.6) ?? 0;
+  });
+}
+</script>
+</body>
+</html>
